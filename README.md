@@ -156,6 +156,11 @@ npm run preview
 - **Backend (Port 3001):** Check if another Express server is using the port
 - **Solution:** Kill existing processes or modify port configuration
 
+**Build/TypeScript Errors**
+- **Problem:** TypeScript compilation errors during build
+- **Solution:** Run `npm run build` to see specific error details
+- **Common fix:** Ensure all dependencies are installed (`npm install`)
+
 <br/>
 
 ### Getting Help
@@ -168,4 +173,5 @@ npm run preview
   <p>Built with ❤️ for music lovers everywhere</p>
   <p>Discover your next favorite track with NextSound</p>
 </div>
+
 
