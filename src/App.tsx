@@ -11,6 +11,7 @@ import {
   DemoModeBadge,
 } from "@/common";
 import { CommandPalette } from "@/components/ui/CommandPalette";
+import QueuePanel from "@/components/ui/QueuePanel";
 
 import "react-loading-skeleton/dist/skeleton.css";
 import "swiper/css";
@@ -63,6 +64,7 @@ const App = () => {
       />
 
       <Footer />
+      <QueuePanel />
     </>
   );
 };

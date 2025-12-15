@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Card, CardContent } from './card';
-import {
-  FaClock
-} from 'react-icons/fa';
+import { Button } from './button';
+import { FaClock } from 'react-icons/fa';
+import { FiPlus } from 'react-icons/fi';
 import { ITrack } from '@/types';
 import { getImageUrl, cn } from '@/utils';
 
@@ -11,6 +11,7 @@ interface TrackCardProps {
   category: string;
   isPlaying?: boolean;
   onPlay?: (track: ITrack) => void;
+  onAddToQueue?: (track: ITrack) => void;
   variant?: 'compact' | 'detailed' | 'featured';
   className?: string;
 }
@@ -19,7 +20,8 @@ export const TrackCard: React.FC<TrackCardProps> = ({
   track,
   category: _category,
   isPlaying: _isPlayingProp,
-  onPlay: _onPlayProp,
+  onPlay,
+  onAddToQueue,
   variant = 'detailed',
   className
 }) => {
@@ -52,6 +54,7 @@ export const TrackCard: React.FC<TrackCardProps> = ({
         "w-[180px]", // Slightly wider for better proportions
         className
       )}
+      onClick={() => onPlay?.(track)}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
@@ -126,6 +129,24 @@ export const TrackCard: React.FC<TrackCardProps> = ({
             </div>
           )}
         </CardContent>
+      </div>
+
+      <div className="pt-3">
+        <Button
+          size="sm"
+          variant="secondary"
+          className={cn(
+            "w-full flex items-center justify-center gap-2 transition-opacity duration-200",
+            isHovered ? "opacity-100" : "opacity-90"
+          )}
+          onClick={(e) => {
+            e.stopPropagation();
+            onAddToQueue?.(track);
+          }}
+        >
+          <FiPlus className="w-4 h-4" />
+          Add to Queue
+        </Button>
       </div>
 
       {/* Hover glow effect */}

@@ -2,6 +2,7 @@ import { FC } from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
 
 import { TrackCard } from "@/components/ui/TrackCard";
+import { useAudioPlayerContext } from "@/context/audioPlayerContext";
 import { ITrack } from "@/types";
 
 interface MusicSlidesProps {
@@ -11,11 +12,16 @@ interface MusicSlidesProps {
 }
 
 const MusicSlides: FC<MusicSlidesProps> = ({ tracks, category, useModernCards: _useModernCards = true }) => {
+  const { playTrack, enqueue, openQueuePanel } = useAudioPlayerContext();
+
   const handlePlay = (track: ITrack) => {
-    console.log('🎵 Track clicked (audio player removed):', track.name || track.title);
-    // Audio player functionality removed - this is now just a visual music browser
+    playTrack(track);
   };
 
+  const handleAddToQueue = (track: ITrack) => {
+    enqueue(track);
+    openQueuePanel();
+  };
 
   return (
     <Swiper slidesPerView="auto" spaceBetween={15} className="mySwiper">
@@ -30,6 +36,7 @@ const MusicSlides: FC<MusicSlidesProps> = ({ tracks, category, useModernCards: _
               category={category}
               isPlaying={false}
               onPlay={handlePlay}
+              onAddToQueue={handleAddToQueue}
               variant="detailed"
             />
           </SwiperSlide>
