@@ -104,7 +104,13 @@ export const useAudioPlayer = () => {
     async (nextIndex: number | null, autoPlay = true) => {
       if (nextIndex === null || nextIndex < 0 || nextIndex >= state.queue.length) {
         audioRef.current?.pause();
-        setState(prev => ({ ...prev, isPlaying: false, progress: 0 }));
+        setState(prev => ({
+          ...prev,
+          currentIndex: -1,
+          currentTrack: null,
+          isPlaying: false,
+          progress: 0,
+        }));
         return;
       }
 
@@ -244,23 +250,55 @@ export const useAudioPlayer = () => {
     setState(prev => ({ ...prev, isQueueOpen: !prev.isQueueOpen }));
   }, []);
 
+  const togglePlay = useCallback(() => {
+    if (!state.currentTrack) return;
+
+    if (state.isPlaying) {
+      audioRef.current?.pause();
+
+      if (simulationInterval.current) {
+        clearInterval(simulationInterval.current);
+        simulationInterval.current = null;
+      }
+    } else {
+      if (audioRef.current && state.currentTrack.preview_url) {
+        audioRef.current.play().catch(error => {
+          console.error('Audio play failed:', error);
+        });
+      } else {
+        startSimulation();
+      }
+    }
+
+    setState(prev => ({ ...prev, isPlaying: !prev.isPlaying }));
+  }, [startSimulation, state.currentTrack, state.isPlaying]);
+
   const playTrack = useCallback(
     async (track: ITrack) => {
       if (!track) return;
 
+      // If already current, just toggle
       if (state.currentTrack?.id === track.id) {
         togglePlay();
         return;
       }
 
-      setState(prev => ({
-        ...prev,
-        queue: [track],
-        currentIndex: 0,
-        currentTrack: track,
-        isPlaying: true,
-        progress: 0,
-      }));
+      setState(prev => {
+        const existingIndex = prev.queue.findIndex(t => t.id === track.id);
+        const isInQueue = existingIndex !== -1;
+
+        const nextQueue = isInQueue ? prev.queue : [...prev.queue, track];
+        const nextIndex = isInQueue ? existingIndex : nextQueue.length - 1;
+
+        return {
+          ...prev,
+          queue: nextQueue,
+          currentIndex: nextIndex,
+          currentTrack: track,
+          isPlaying: true,
+          progress: 0,
+        };
+      });
 
       await loadTrack(track, true);
     },
@@ -277,6 +315,7 @@ export const useAudioPlayer = () => {
         queue: nextQueue,
         currentIndex: nextIndex,
         currentTrack: prev.currentTrack ?? track,
+        isQueueOpen: true,
       };
     });
   }, []);
@@ -314,29 +353,6 @@ export const useAudioPlayer = () => {
       audioRef.current.volume = volume / 100;
     }
   }, []);
-
-  const togglePlay = useCallback(() => {
-    if (!state.currentTrack) return;
-
-    if (state.isPlaying) {
-      audioRef.current?.pause();
-
-      if (simulationInterval.current) {
-        clearInterval(simulationInterval.current);
-        simulationInterval.current = null;
-      }
-    } else {
-      if (audioRef.current && state.currentTrack.preview_url) {
-        audioRef.current.play().catch(error => {
-          console.error('Audio play failed:', error);
-        });
-      } else {
-        startSimulation();
-      }
-    }
-
-    setState(prev => ({ ...prev, isPlaying: !prev.isPlaying }));
-  }, [startSimulation, state.currentTrack, state.isPlaying]);
 
   const toggleShuffle = useCallback(() => {
     setState(prev => ({ ...prev, isShuffled: !prev.isShuffled }));
