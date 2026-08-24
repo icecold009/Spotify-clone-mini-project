@@ -135,10 +135,7 @@ export const TrackCard: React.FC<TrackCardProps> = ({
         <Button
           size="sm"
           variant="secondary"
-          className={cn(
-            "w-full flex items-center justify-center gap-2 transition-opacity duration-200",
-            isHovered ? "opacity-100" : "opacity-90"
-          )}
+          className="w-full flex items-center justify-center gap-2"
           onClick={(e) => {
             e.stopPropagation();
             onAddToQueue?.(track);

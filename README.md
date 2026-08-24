@@ -90,4 +90,3 @@ src/assets/images/      README and interface imagery
 - If ports are occupied, move the Vite or Express port in the local configuration rather than exposing credentials directly to the browser.
 
 NextSound is a discovery experience, not a replacement for Spotify. Spotify data, images, and API usage remain subject to Spotify’s current developer terms.
-
