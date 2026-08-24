@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { FiX, FiArrowUp, FiArrowDown, FiTrash2, FiList, FiPlay } from 'react-icons/fi';
 import { useAudioPlayerContext } from '@/context/audioPlayerContext';
 import { getImageUrl, cn } from '@/utils';
@@ -17,6 +17,40 @@ const QueuePanel: React.FC = () => {
     playFromQueue,
     clearQueue,
   } = useAudioPlayerContext();
+  const panelRef = useRef<HTMLDivElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (!isQueueOpen) return;
+    const previouslyFocused = triggerRef.current ?? document.activeElement;
+    const focusable = () => Array.from(panelRef.current?.querySelectorAll<HTMLElement>('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])') ?? []).filter((element) => !element.hasAttribute('disabled'));
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        closeQueuePanel();
+        return;
+      }
+      if (event.key !== 'Tab') return;
+      const elements = focusable();
+      if (!elements.length) return;
+      const first = elements[0];
+      const last = elements[elements.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    closeButtonRef.current?.focus();
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      if (previouslyFocused instanceof HTMLElement) previouslyFocused.focus();
+    };
+  }, [closeQueuePanel, isQueueOpen]);
 
   const handleMove = (index: number, direction: 'up' | 'down') => {
     const target = direction === 'up' ? index - 1 : index + 1;
@@ -26,7 +60,12 @@ const QueuePanel: React.FC = () => {
   return (
     <>
       <button
+        ref={triggerRef}
         onClick={toggleQueuePanel}
+        type="button"
+        aria-expanded={isQueueOpen}
+        aria-controls="queue-panel"
+        aria-label={`Queue, ${queue.length} tracks`}
         className="fixed bottom-20 right-4 z-40 inline-flex items-center gap-2 rounded-full bg-gray-900 text-white px-4 py-2 shadow-lg hover:bg-black transition-colors duration-150"
       >
         <FiList className="w-4 h-4" />
@@ -37,8 +76,15 @@ const QueuePanel: React.FC = () => {
       </button>
 
       <div
+        ref={panelRef}
+        id="queue-panel"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="queue-panel-title"
+        aria-hidden={!isQueueOpen}
         className={cn(
           'fixed top-0 right-0 h-full w-full max-w-md bg-white dark:bg-gray-900 shadow-2xl z-50 transition-transform duration-300 border-l border-gray-200 dark:border-gray-800 flex flex-col',
+          isQueueOpen ? 'visible' : 'invisible',
           isQueueOpen ? 'translate-x-0' : 'translate-x-full'
         )}
       >
@@ -46,7 +92,7 @@ const QueuePanel: React.FC = () => {
           <div className="flex items-center gap-2">
             <FiList className="w-4 h-4 text-gray-500" />
             <div>
-              <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Up Next</p>
+              <p id="queue-panel-title" className="text-sm font-semibold text-gray-900 dark:text-gray-100">Up Next</p>
               <p className="text-xs text-gray-500">{queue.length} tracks in queue</p>
             </div>
           </div>
@@ -57,7 +103,7 @@ const QueuePanel: React.FC = () => {
                 Clear
               </Button>
             )}
-            <Button variant="ghost" size="icon" onClick={closeQueuePanel}>
+            <Button ref={closeButtonRef} variant="ghost" size="icon" onClick={closeQueuePanel} aria-label="Close queue">
               <FiX className="w-4 h-4" />
             </Button>
           </div>

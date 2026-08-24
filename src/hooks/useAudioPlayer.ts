@@ -28,6 +28,7 @@ export const useAudioPlayer = () => {
     isMinimized: false,
     isQueueOpen: false,
   });
+  const [favoriteTrackIds, setFavoriteTrackIds] = useState<string[]>([]);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const progressInterval = useRef<NodeJS.Timeout | null>(null);
@@ -368,8 +369,12 @@ export const useAudioPlayer = () => {
   }, []);
 
   const toggleFavorite = useCallback(() => {
-    console.log('Toggle favorite - not implemented yet');
-  }, []);
+    const trackId = state.currentTrack?.id;
+    if (!trackId) return;
+    setFavoriteTrackIds((current) => current.includes(trackId)
+      ? current.filter((id) => id !== trackId)
+      : [...current, trackId]);
+  }, [state.currentTrack?.id]);
 
   const toggleMinimize = useCallback(() => {
     setState(prev => ({ ...prev, isMinimized: !prev.isMinimized }));
@@ -503,6 +508,7 @@ export const useAudioPlayer = () => {
     repeatMode: state.repeatMode,
     isMinimized: state.isMinimized,
     isQueueOpen: state.isQueueOpen,
+    isFavorite: state.currentTrack ? favoriteTrackIds.includes(state.currentTrack.id) : false,
 
     playTrack,
     enqueue,
