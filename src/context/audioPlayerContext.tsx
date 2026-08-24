@@ -14,6 +14,7 @@ interface AudioPlayerContextType {
   repeatMode: 'off' | 'one' | 'all';
   isMinimized: boolean;
   isQueueOpen: boolean;
+  isFavorite: boolean;
   playTrack: (track: ITrack) => void;
   enqueue: (track: ITrack) => void;
   enqueueNext: (track: ITrack) => void;

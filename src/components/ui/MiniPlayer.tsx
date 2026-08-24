@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from './button';
 import {
   FiPlay,
@@ -32,6 +32,7 @@ interface MiniPlayerProps {
   onToggleShuffle?: () => void;
   onToggleRepeat?: () => void;
   onToggleFavorite?: () => void;
+  isFavorite?: boolean;
   onClose?: () => void;
   isMinimized?: boolean;
   onToggleMinimize?: () => void;
@@ -53,24 +54,20 @@ export const MiniPlayer: React.FC<MiniPlayerProps> = ({
   onToggleShuffle,
   onToggleRepeat,
   onToggleFavorite,
+  isFavorite: favoriteProp,
   isMinimized = false,
   onToggleMinimize,
   className
 }) => {
   const [isMuted, setIsMuted] = useState(false);
-  const [isDragging, setIsDragging] = useState(false);
   const [localProgress, setLocalProgress] = useState(progress);
   const [showVolumeSlider, setShowVolumeSlider] = useState(false);
-  const [isFavorite, setIsFavorite] = useState(false);
-
-  const progressRef = useRef<HTMLDivElement>(null);
+  const [localFavorite, setLocalFavorite] = useState(false);
 
   // Update local progress when prop changes (but not while dragging)
   useEffect(() => {
-    if (!isDragging) {
-      setLocalProgress(progress);
-    }
-  }, [progress, isDragging]);
+    setLocalProgress(progress);
+  }, [progress]);
 
   if (!currentTrack) return null;
 
@@ -91,19 +88,10 @@ export const MiniPlayer: React.FC<MiniPlayerProps> = ({
   };
 
   const handleFavoriteClick = () => {
-    setIsFavorite(!isFavorite);
+    setLocalFavorite((current) => !current);
     onToggleFavorite?.();
   };
-
-  const handleProgressClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!progressRef.current) return;
-    const rect = progressRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const percentage = (x / rect.width) * 100;
-    const clampedPercentage = Math.max(0, Math.min(100, percentage));
-    setLocalProgress(clampedPercentage);
-    onSeek?.(clampedPercentage);
-  };
+  const favoriteActive = favoriteProp ?? localFavorite;
 
   const duration = currentTrack.duration || 180000; // Fallback to 3 minutes
   const currentTime = (localProgress / 100) * duration / 1000;
@@ -123,6 +111,7 @@ export const MiniPlayer: React.FC<MiniPlayerProps> = ({
           />
           <Button
             onClick={onTogglePlay}
+            aria-label={isPlaying ? 'Pause playback' : 'Play playback'}
             variant="ghost"
             size="icon"
             className="flex items-center justify-center w-8 h-8 bg-blue-600 hover:bg-blue-700 text-white rounded-full transition-colors duration-200"
@@ -131,6 +120,7 @@ export const MiniPlayer: React.FC<MiniPlayerProps> = ({
           </Button>
           <Button
             onClick={onToggleMinimize}
+            aria-label="Expand player"
             variant="ghost"
             size="icon"
             className="flex items-center justify-center w-6 h-6 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors duration-200"
@@ -148,18 +138,23 @@ export const MiniPlayer: React.FC<MiniPlayerProps> = ({
       className
     )}>
       {/* Progress bar - full width at top */}
-      <div 
-        className="w-full h-1 bg-gray-200 dark:bg-gray-700 cursor-pointer group" 
-        ref={progressRef}
-        onClick={handleProgressClick}
-      >
-        <div 
-          className="h-full bg-blue-600 transition-all duration-100 rounded-full relative group-hover:bg-blue-500"
-          style={{ width: `${localProgress}%` }}
-        >
-          <div className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 bg-blue-600 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200 -mr-1.5"></div>
-        </div>
-      </div>
+      <label className="block w-full h-2 px-1" aria-label="Track progress">
+        <span className="sr-only">Track progress</span>
+        <input
+          type="range"
+          min="0"
+          max="100"
+          step="0.1"
+          value={localProgress}
+          onChange={(event) => {
+            const nextProgress = Number(event.target.value);
+            setLocalProgress(nextProgress);
+            onSeek?.(nextProgress);
+          }}
+          className="block h-2 w-full cursor-pointer accent-blue-600"
+          aria-label="Track progress"
+        />
+      </label>
 
       <div className="flex items-center justify-between px-4 py-3">
         {/* Track info */}
@@ -197,12 +192,13 @@ export const MiniPlayer: React.FC<MiniPlayerProps> = ({
             size="icon"
             className={cn(
               "flex items-center justify-center w-8 h-8 rounded-full transition-all duration-200 hover:scale-110",
-              isFavorite 
-                ? "text-red-500 hover:text-red-600" 
+              favoriteActive
+                ? "text-red-500 hover:text-red-600"
                 : "text-gray-400 hover:text-red-500 dark:text-gray-500"
             )}
           >
-            <FiHeart className={cn("w-4 h-4", isFavorite && "fill-current")} />
+            <span className="sr-only">{favoriteActive ? 'Remove from favorites' : 'Add to favorites'}</span>
+            <FiHeart className={cn("w-4 h-4", favoriteActive && "fill-current")} />
           </Button>
         </div>
 
@@ -211,6 +207,8 @@ export const MiniPlayer: React.FC<MiniPlayerProps> = ({
           {/* Shuffle */}
           <Button
             onClick={onToggleShuffle}
+            aria-label="Toggle shuffle"
+            aria-pressed={isShuffled}
             variant="ghost"
             size="icon"
             className={cn(
@@ -226,6 +224,7 @@ export const MiniPlayer: React.FC<MiniPlayerProps> = ({
           {/* Previous */}
           <Button
             onClick={onSkipPrevious}
+            aria-label="Play previous track"
             variant="ghost"
             size="icon"
             className="flex items-center justify-center w-10 h-10 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-all duration-200 hover:scale-110"
@@ -236,6 +235,7 @@ export const MiniPlayer: React.FC<MiniPlayerProps> = ({
           {/* Play/Pause */}
           <Button
             onClick={onTogglePlay}
+            aria-label={isPlaying ? 'Pause playback' : 'Play playback'}
             variant="ghost"
             size="icon"
             className="flex items-center justify-center w-12 h-12 bg-gray-900 hover:bg-black dark:bg-white dark:hover:bg-gray-100 text-white dark:text-gray-900 rounded-full shadow-lg transition-all duration-200 hover:scale-105"
@@ -250,6 +250,7 @@ export const MiniPlayer: React.FC<MiniPlayerProps> = ({
           {/* Next */}
           <Button
             onClick={onSkipNext}
+            aria-label="Play next track"
             variant="ghost"
             size="icon"
             className="flex items-center justify-center w-10 h-10 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-all duration-200 hover:scale-110"
@@ -260,6 +261,8 @@ export const MiniPlayer: React.FC<MiniPlayerProps> = ({
           {/* Repeat */}
           <Button
             onClick={onToggleRepeat}
+            aria-label={`Repeat ${repeatMode === 'off' ? 'off' : repeatMode === 'one' ? 'one track' : 'queue'}`}
+            aria-pressed={repeatMode !== 'off'}
             variant="ghost"
             size="icon"
             className={cn(
@@ -291,6 +294,8 @@ export const MiniPlayer: React.FC<MiniPlayerProps> = ({
           >
             <Button
               onClick={handleVolumeClick}
+              aria-label={isMuted || volume === 0 ? 'Unmute volume' : 'Mute volume'}
+              aria-pressed={isMuted || volume === 0}
               variant="ghost"
               size="icon"
               className="flex items-center justify-center w-8 h-8 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors duration-200"
@@ -326,6 +331,7 @@ export const MiniPlayer: React.FC<MiniPlayerProps> = ({
           <Button
             variant="ghost"
             size="icon"
+            aria-label="More player options"
             className="flex items-center justify-center w-8 h-8 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors duration-200"
           >
             <FiMoreHorizontal className="w-4 h-4" />
@@ -334,6 +340,7 @@ export const MiniPlayer: React.FC<MiniPlayerProps> = ({
           {/* Minimize */}
           <Button
             onClick={onToggleMinimize}
+            aria-label="Minimize player"
             variant="ghost"
             size="icon"
             className="flex items-center justify-center w-8 h-8 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors duration-200"
