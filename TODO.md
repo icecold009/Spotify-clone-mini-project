@@ -71,4 +71,3 @@ Fix the project contract before feature work. The best path is to add and use a 
 - [ ] Keyboard, touch, screen reader, reduced motion, and mobile paths pass.
 - [ ] No client/provider secret boundary is ambiguous.
 - [ ] Feature branch is pushed and clean; `main` is untouched and unmerged.
-
