@@ -76,6 +76,9 @@ const Footer: React.FC = () => {
           </cite>
         </div>
       </div>
+      <a href="https://shauryasaria.me" target="_blank" rel="noopener noreferrer" className="mt-8 block text-center text-gray-700 underline underline-offset-4 dark:text-gray-200">
+        Personal website
+      </a>
     </footer>
   );
 };
